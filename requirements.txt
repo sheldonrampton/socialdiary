@@ -1,0 +1,23 @@
+nltk
+gensim
+sklearn
+requests
+beautifulsoup4
+
+# For creating MS Word docs
+python-docx
+
+# For NLP topic discover
+nltk
+gensim
+scikit-learn
+
+# For summarization
+# transformers
+# torch
+# torchvision
+# torchaudio
+# tensorflow
+
+# For summarization using openai
+# openai
