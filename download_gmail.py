@@ -4,6 +4,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+from datetime import datetime
 
 # Define the scope
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -13,6 +14,20 @@ def get_header(headers, name):
         if header['name'].lower() == name.lower():
             return header['value']
     return None
+
+
+def convert_date_to_timestamp(date_str):
+    # Define the date format
+    # date_format = '%a %b %d %H:%M:%S %z %Y'
+    date_format = "%a, %d %b %Y %H:%M:%S %z"
+
+    # Parse the date string into a datetime object
+    date_object = datetime.strptime(date_str, date_format)
+    
+    # Convert the datetime object to a UNIX timestamp (seconds since Jan 01 1970. (UTC))
+    timestamp = int(date_object.timestamp())
+    
+    return timestamp
 
 
 def main():
@@ -45,6 +60,9 @@ def main():
                 headers = msg['payload']['headers']
                 subject = get_header(headers, 'Subject')
                 date = get_header(headers, 'Date')
+                timestamp = convert_date_to_timestamp(date)
+                date_object = datetime.fromtimestamp(timestamp)
+                formatted_date = date_object.strftime('%Y/%m/%d')
                 from_email = get_header(headers, 'From')
                 to_emails = get_header(headers, 'To')
 
@@ -69,7 +87,7 @@ def main():
                     file.write(f"To: {to_emails}\n")
                     file.write("\n")
                     file.write(msg_str)
-                print(f'Saved {file_name}')
+                print(f'Saved {file_name} from {formatted_date}')
 
         # Prepare the next request
         request = service.users().messages().list_next(previous_request=request, previous_response=results)
