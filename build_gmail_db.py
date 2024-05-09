@@ -8,7 +8,6 @@ from datetime import datetime
 import sqlite3
 from dateutil import parser
 
-
 conn = sqlite3.connect('gmail.db')
 c = conn.cursor()
 c.execute('''
@@ -21,7 +20,6 @@ CREATE TABLE IF NOT EXISTS GmailMessages (
     message TEXT
 )
 ''')
-
 conn.commit()
 conn.close()
 
@@ -34,7 +32,6 @@ def get_header(headers, name):
             return header['value']
     return None
 
-
 def convert_date_to_timestamp(date_str):
     # Try to parse the date string with dateutil.parser which handles more cases
     date_object = parser.parse(date_str)
@@ -44,6 +41,57 @@ def convert_date_to_timestamp(date_str):
     
     return timestamp
 
+
+def retrieve_emails(c, service, request):
+    while request is not None:
+        results = request.execute()
+        messages = results.get('messages', [])
+        nextPageToken = results.get('nextPageToken')
+
+        if not messages:
+            print('No messages found.')
+        else:
+            for message in messages:
+                msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
+                headers = msg['payload']['headers']
+                subject = get_header(headers, 'Subject')
+                date = get_header(headers, 'Date')
+                timestamp = convert_date_to_timestamp(date)
+                date_object = datetime.fromtimestamp(timestamp)
+                formatted_date = date_object.strftime('%Y/%m/%d')
+                from_email = get_header(headers, 'From')
+                to_emails = get_header(headers, 'To')
+
+                # Extract email body
+                msg_str = ''
+                if 'data' in msg['payload']['body']:
+                    msg_str = base64.urlsafe_b64decode(msg['payload']['body']['data']).decode('utf-8')
+                else:
+                    parts = msg['payload'].get('parts', [])
+                    for part in parts:
+                        if part['mimeType'] == 'text/plain' and 'data' in part['body']:
+                            msg_str = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
+                            break
+                        else:
+                            continue  # Skip if no text/plain part found
+
+                # Save email with metadata
+                file_name = f'gmail/message_{message["id"]}.txt'
+                with open(file_name, 'w') as file:
+                    file.write(f"Subject: {subject}\n")
+                    file.write(f"Date: {date}\n")
+                    file.write(f"From: {from_email}\n")
+                    file.write(f"To: {to_emails}\n")
+                    file.write("\n")
+                    file.write(msg_str)
+                    c.execute('''
+                    INSERT INTO GmailMessages (subject, timestamp, from_email, to_emails, message)
+                    VALUES (?, ?, ?, ?, ?)
+                    ''', (subject, timestamp, from_email, to_emails, msg_str))
+                print(f'Saved {file_name} from {formatted_date}')
+
+        # Prepare the next request
+        request = service.users().messages().list_next(previous_request=request, previous_response=results)
 
 
 def main():
@@ -64,58 +112,28 @@ def main():
 
     service = build('gmail', 'v1', credentials=creds)
 
+    print(">>>>>> QUERY:", "SENT")
     request = service.users().messages().list(userId='me', labelIds=['SENT'])
-    while request is not None:
-        results = request.execute()
-        messages = results.get('messages', [])
-        nextPageToken = results.get('nextPageToken')
+    retrieve_emails(c, service, request)
 
-        if not messages:
-            print('No sent messages found.')
-        else:
-            for message in messages:
-                msg = service.users().messages().get(userId='me', id=message['id'], format='full').execute()
-                headers = msg['payload']['headers']
-                subject = get_header(headers, 'Subject')
-                date = get_header(headers, 'Date')
-                timestamp = convert_date_to_timestamp(date)
-                date_object = datetime.fromtimestamp(timestamp)
-                formatted_date = date_object.strftime('%Y/%m/%d')
-                from_email = get_header(headers, 'From')
-                to_emails = get_header(headers, 'To')
+    # Query for messages from a email addresses
+    query = 'from:sheldon2000@tds.net'
+    print(">>>>>> QUERY:", query)
+    request = service.users().messages().list(userId='me', q=query)
+    retrieve_emails(c, service, request)
 
-                # Extract email body
-                if 'data' in msg['payload']['body']:
-                    msg_str = base64.urlsafe_b64decode(msg['payload']['body']['data']).decode('utf-8')
-                else:
-                    parts = msg['payload'].get('parts', [])
-                    for part in parts:
-                        if part['mimeType'] == 'text/plain' and 'data' in part['body']:
-                            msg_str = base64.urlsafe_b64decode(part['body']['data']).decode('utf-8')
-                            break
-                    else:
-                        continue  # Skip if no text/plain part found
+    query = 'from:sheldon@prwatch.org'
+    print(">>>>>> QUERY:", query)
+    request = service.users().messages().list(userId='me', q=query)
+    retrieve_emails(c, service, request)
 
-                # Save email with metadata
-                file_name = f'gmail/sent_message_{message["id"]}.txt'
-                with open(file_name, 'w') as file:
-                    file.write(f"Subject: {subject}\n")
-                    file.write(f"Date: {date}\n")
-                    file.write(f"From: {from_email}\n")
-                    file.write(f"To: {to_emails}\n")
-                    file.write("\n")
-                    file.write(msg_str)
-                    c.execute('''
-                    INSERT INTO GmailMessages (subject, timestamp, from_email, to_emails, message)
-                    VALUES (?, ?, ?, ?, ?)
-                    ''', (subject, timestamp, from_email, to_emails, msg_str))
-                print(f'Saved {file_name} from {formatted_date}')
+    query = 'from:sheldon@sheldonrampton.com'
+    print(">>>>>> QUERY:", query)
+    request = service.users().messages().list(userId='me', q=query)
+    retrieve_emails(c, service, request)
 
-        # Prepare the next request
-        request = service.users().messages().list_next(previous_request=request, previous_response=results)
     conn.commit()
     conn.close()
-
 
 if __name__ == '__main__':
     main()
