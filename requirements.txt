@@ -25,7 +25,10 @@ lxml
 # torch
 # torchvision
 # torchaudio
-# tensorflow
+tensorflow
 
 # For summarization using openai
 # openai
+
+
+

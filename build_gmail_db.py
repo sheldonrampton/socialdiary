@@ -43,6 +43,11 @@ def convert_date_to_timestamp(date_str):
 
 
 def retrieve_emails(c, service, request):
+    excluded_subjects = [
+        "New release(s) available for Rampton's Rambler",
+        "vBulletin (forum) Database error!",
+        "Unsubscribe"
+    ]
     while request is not None:
         results = request.execute()
         messages = results.get('messages', [])
@@ -84,10 +89,11 @@ def retrieve_emails(c, service, request):
                     file.write(f"To: {to_emails}\n")
                     file.write("\n")
                     file.write(msg_str)
-                    c.execute('''
-                    INSERT INTO GmailMessages (subject, timestamp, from_email, to_emails, message)
-                    VALUES (?, ?, ?, ?, ?)
-                    ''', (subject, timestamp, from_email, to_emails, msg_str))
+                    if subject not in excluded_subjects and msg_str != '':
+                        c.execute('''
+                        INSERT INTO GmailMessages (subject, timestamp, from_email, to_emails, message)
+                        VALUES (?, ?, ?, ?, ?)
+                        ''', (subject, timestamp, from_email, to_emails, msg_str))
                 print(f'Saved {file_name} from {formatted_date}')
 
         # Prepare the next request
