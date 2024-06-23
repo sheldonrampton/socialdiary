@@ -20,6 +20,7 @@ Both Facebook and Twitter have additional data, including media files with image
 
 ### Working code
 * build_gmail_db.py: uses the Gmail API to build a SQLite database of my email sending history.
+* breakout_months.py: generates a separate text file for each month of content in the databases.
 * comments_to_csv.py: processes my Facebook comments into a CSV file.
 * posts_to_csv.py: processes my Facebook posts into a CSV file
 * search_everything: searches for all content that matches a keyword and outputs it all as a text file.
@@ -32,6 +33,7 @@ Both Facebook and Twitter have additional data, including media files with image
 
 ### Test code
 * build_database.py: test script to load some content from a CSV of Facebook posts into a SQLite database.
+* build_database_comments.py: loads content from a CSV of Facebook comments into the SQLite database.
 * categorize_by_topic.py: an untested script (probably needs fixing) to filter content by matching category keywords and 
 * categorize_posts.py: processes a posts.csv file and uses Latent Dirichlet Allocation (LDA) or Non-negative Matrix Factorization (NMF) to automatically identify topic categories. Not ready for prime time, but this might be a step in the direction of an AI tool for organizing content.
 * cleanup_html.py: test script to clean up some sample HTML-based email messages.
