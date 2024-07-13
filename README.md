@@ -3,6 +3,9 @@ v0.0.0
 
 This is a collection of code designed to collect, organize and search social media posts from Facebook and Twitter. Ideally it will become a tool, perhaps an app, that I can use to help draft book chapters and blog entries based on my posting history.
 
+## Loading libraries
+    source myenv2/bin/activate
+
 ## Source data
 
 Facebook data is in a downloaded Facebook archive, in the following locations:

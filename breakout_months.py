@@ -14,18 +14,21 @@ Sheldon Rampton
 
 
 def is_html(content):
+    """
+    Returns true of the content is HTML, false otherwise.
+    """
+
     # Pattern to detect minimal HTML tags
     html_pattern = re.compile(r'<\s*([a-zA-Z][a-zA-Z0-9]*)\b[^>]*>(.*?)<\s*/\1\s*>', re.IGNORECASE | re.DOTALL)
     # Search for the pattern in the content
     return bool(html_pattern.search(content))
 
 
-def perform_action():
-    # Example of an action: print a message
-    print("Action performed.")
-
-
 def strip_html(html_content):
+    """
+    Converts HTML to plain text.
+    """
+
     # Use BeautifulSoup to parse the HTML content
     soup = BeautifulSoup(html_content, 'lxml')
     
@@ -39,6 +42,12 @@ def strip_html(html_content):
 
 
 def clean_message(text):
+    """
+    Cleans some unwanted text out of email message bodies,
+    including sig lines and > characters at the beginning of
+    quoted text.
+    """
+
     # Split the message into lines
     lines = text.split('\n')
     
@@ -69,6 +78,11 @@ def clean_message(text):
 
 
 def fetch_data(keyword):
+    """
+    Retrieves the contents of the social_media and gmail databases
+    and combines them into a single 
+    """
+
     # Connect to the SQLite databases
     conn_social = sqlite3.connect('social_media.db')
     conn_gmail = sqlite3.connect('gmail.db')
@@ -107,6 +121,13 @@ def fetch_data(keyword):
     combined_sorted = sorted(combined_results, key=lambda x: x[4])
     
     return combined_sorted
+
+
+"""
+Main loop: Creates a "months" directory, retrieves all of the
+content in the database, and writes out that content to a separate
+file for each month for which content exists.
+"""
 
 # Create the "months" directory if it doesn't exist
 if not os.path.exists('months'):
